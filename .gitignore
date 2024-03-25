@@ -1,3 +1,4 @@
 data/*
 .env
 storage/*
+flask_session/*
