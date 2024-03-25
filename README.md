@@ -19,3 +19,11 @@ Our RAG model leverages this indexed dataset to answer complex queries about NS.
 
 ## Impact
 NSinsight aims to democratize access to specialized knowledge on Nephrotic Syndrome, offering a novel tool for medical professionals, researchers, and families affected by NS. By streamlining the process of extracting information from extensive literature, NSinsight supports informed decision-making, promotes personalized care, and fosters ongoing research into Nephrotic Syndrome.
+
+# How to use
+* run `pip install -r requirements.txt`
+* copy all your pdf to ./data
+* copy .dev.env to .env and update OpenAI key
+* run `python index_pdfs.py`
+* run `python app.py`  #to use web interface
+* run 'python simple_ask.py'  #to ask a simple question

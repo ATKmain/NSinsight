@@ -1,20 +1,24 @@
 from flask import Flask, request, render_template_string
 import openai
-from llamaindex import LlamaIndex
 from dotenv import load_dotenv
 import os
+from llama_index.core import (
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    StorageContext,
+    load_index_from_storage,
+)
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-# Load the indexed PDF content
-index = LlamaIndex()
-index.load("pdf_index")
+# load the the index
+PERSIST_DIR = "./storage"
+storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+index = load_index_from_storage(storage_context)
 
-# Retrieve the OpenAI API key from environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/", methods=["GET"])
 def home():
@@ -38,18 +42,23 @@ def home():
 def ask():
     question = request.form.get("question")
     
-    # Retrieve relevant context from indexed PDFs
-    context = index.search(question, top_k=3)  # Adjust top_k as needed
+    # # Retrieve relevant context from indexed PDFs
+    # context = index.search(question, top_k=3)  # Adjust top_k as needed
     
-    # Use OpenAI's ChatGPT with the context to generate an answer
-    response = openai.Completion.create(
-        model="gpt-4",
-        prompt=f"{question}\n\n###\n\n{context}",
-        max_tokens=150,
-        temperature=0.7
-    )
+    # # Use OpenAI's ChatGPT with the context to generate an answer
+    # response = openai.Completion.create(
+    #     model="gpt-4",
+    #     prompt=f"{question}\n\n###\n\n{context}",
+    #     max_tokens=150,
+    #     temperature=0.7
+    # )
+
+    # Either way we can now query the index
+    query_engine = index.as_query_engine()
+    response = query_engine.query(question)
+    print(response)
     
-    return f"Question: {question}<br>Answer: {response.choices[0].text.strip()}"
+    return f"Question: {question}<br>Answer: {response}"
 
 if __name__ == "__main__":
     app.run(debug=True)

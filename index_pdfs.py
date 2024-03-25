@@ -1,7 +1,5 @@
 
 from dotenv import load_dotenv
-load_dotenv('/path/to/your/.env')
-
 from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
