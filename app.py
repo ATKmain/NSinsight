@@ -3,6 +3,7 @@ from flask_session import Session  # You might need to install this with pip
 import openai
 from dotenv import load_dotenv
 import os
+import logging
 from llama_index.core import (
     StorageContext,
     load_index_from_storage,
@@ -34,12 +35,35 @@ def home():
         print('question: ', question)
 
         # Example of querying the index; adapt this to your actual querying logic
-        query_engine = index.as_query_engine()
+        query_engine = index.as_query_engine(
+            response_mode="tree_summarize",            
+            verbose=True,
+            retriever_kwargs={
+                'top_k': 10  # Specify the number of documents to retrieve
+            }
+        )
+
+        retrieved_context = query_engine.retrieve(question)
+        logging.info(f"Retrieved context for question '{question}': {retrieved_context}")
+        # print('retrieved_context: ', retrieved_context)
+        
+        
+        # Create a text list of file names and extracted text
+        context_list = []
+        for node_with_score in retrieved_context:
+            doc = node_with_score.node
+            file_name = doc.metadata.get('file_name', 'Unknown')
+            extracted_text = doc.text
+            context_list.append(f"<h3>File: {file_name}</h3><p>{extracted_text}</p>")
+        
+        context_text = "\n".join(context_list)
+        logging.info(f"Retrieved context for question '{question}':\n{context_text}")
+
         response = query_engine.query(question)
         print('Answer:' , response)
 
         # Insert at the beginning of the list to show on top
-        session['history'].insert(0, (question, response))
+        session['history'].insert(0, (question, response, context_text))
         session.modified = True  # This is important to mark the session as modified
 
     return render_template_string("""
@@ -68,9 +92,15 @@ def home():
                 <input type="submit" value="Ask">
             </form>
             <div class="history">
-                {% for q, a in session['history'] %}
+                {% for q, a , c in session['history'] %}
                 <div>
                     <div class="question">{{ q }}</div>
+                    <div class="answer">
+                        <details>
+                            <summary>Context</summary>
+                            {{ c|safe }}
+                        </details>
+                    </div>
                     <div class="answer">{{ a }}</div>
                 </div>
                 {% endfor %}

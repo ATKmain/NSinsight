@@ -1,4 +1,6 @@
 data/*
 .env
 storage/*
+storage_full/*
+storage_test/*
 flask_session/*
